@@ -252,6 +252,34 @@ body {
 .add-sup-form input { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; font-size: 14px; font-family: inherit; outline: none; background: var(--bg); }
 .add-sup-form input:focus { border-color: var(--primary); }
 .add-sup-form button { padding: 12px 18px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+/* ===== REMINDER ===== */
+.reminder-banner { background: linear-gradient(135deg, #FFF0E5, #FFE8E0); border: 1.5px solid var(--orange); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+.reminder-banner .rb-icon { font-size: 28px; flex-shrink: 0; }
+.reminder-banner .rb-body { flex: 1; min-width: 0; }
+.reminder-banner .rb-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.reminder-banner .rb-sub { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.reminder-banner .rb-btn { flex-shrink: 0; padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.reminder-banner .rb-btn:active { transform: scale(0.95); }
+.reminder-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.reminder-item:last-child { border-bottom: none; }
+.reminder-item .ri-emoji { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+.reminder-item .ri-info { flex: 1; min-width: 0; }
+.reminder-item .ri-name { font-size: 15px; font-weight: 600; }
+.reminder-item .ri-detail { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.reminder-item .ri-toggle { position: relative; width: 44px; height: 26px; border-radius: 13px; background: #ddd; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; -webkit-appearance: none; appearance: none; }
+.reminder-item .ri-toggle.on { background: var(--green); }
+.reminder-item .ri-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.reminder-item .ri-toggle.on::after { transform: translateX(18px); }
+.reminder-item .ri-del { width: 28px; height: 28px; border-radius: 50%; border: none; background: #FEE; color: var(--primary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.add-reminder-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.add-reminder-form select, .add-reminder-form input { border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; background: var(--bg); }
+.add-reminder-form select:focus, .add-reminder-form input:focus { border-color: var(--primary); }
+.add-reminder-form .arf-row { display: flex; gap: 8px; align-items: center; }
+.add-reminder-form .arf-row > * { flex: 1; }
+.add-reminder-form .arf-row label { flex: none; font-size: 13px; color: var(--text-light); white-space: nowrap; }
+.add-reminder-form .arf-add { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.notif-hint { font-size: 12px; color: var(--text-lighter); line-height: 1.6; margin-top: 8px; padding: 8px 10px; background: var(--orange-light); border-radius: 8px; }
+.notif-hint a { color: var(--primary); font-weight: 600; text-decoration: underline; }
 .section-toggle { text-align: center; margin-top: 4px; }
 .section-toggle button { background: none; border: none; color: var(--primary); font-size: 14px; cursor: pointer; font-family: inherit; padding: 10px 20px; border-radius: 20px; font-weight: 500; }
 .section-toggle button:active { background: var(--primary-light); }
@@ -407,8 +435,9 @@ body {
       <button class="today-badge" id="todayBadge" style="display:none;" onclick="goToday()">回今天</button>
     </div>
 
-    <!-- Supplements -->
-    <div class="card">
+    <div id="reminderBanner" style="display:none;"></div>
+
+    <div class="card" id="supplementCard">
       <div class="card-header">
         <div class="card-title"><span class="icon">💊</span>今日补剂</div>
         <span class="sup-summary" id="supSummary"></span>
@@ -511,6 +540,22 @@ body {
           <input type="text" id="newSupName" placeholder="输入补剂名称" maxlength="20">
           <button onclick="addSupplement()">添加</button>
         </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">⏰ 服药提醒</div>
+        <div id="reminderList"></div>
+        <div class="add-reminder-form">
+          <select id="reminderSupSelect"></select>
+          <div class="arf-row">
+            <label>时间</label>
+            <input type="time" id="reminderTime" value="08:00">
+            <label>提前</label>
+            <input type="number" id="reminderAdvance" min="0" max="60" step="5" value="5" style="max-width:70px;flex:none;">
+            <label>分钟</label>
+          </div>
+          <button class="arf-add" type="button" onclick="addReminder()">+ 添加提醒</button>
+        </div>
+        <div id="notifHint" class="notif-hint"></div>
       </div>
     </div>
   </div>
@@ -827,7 +872,8 @@ function getDefaultData() {
         { id: '3', name: '补铁剂', emoji: '🩸' },
         { id: '4', name: '补钙剂', emoji: '🦴' },
         { id: '5', name: '维生素D3', emoji: '☀️' }
-      ]
+      ],
+      reminders: []
     },
     records: {}
   };
@@ -839,6 +885,7 @@ function migrateData(data) {
   if (!data.settings.supplements || !data.settings.supplements.length) {
     data.settings.supplements = getDefaultData().settings.supplements;
   }
+  if (!data.settings.reminders) data.settings.reminders = [];
   if (!data.settings.lmpDate) data.settings.lmpDate = '';
   if (data.settings.height === undefined) data.settings.height = null;
   if (data.settings.prePregWeight === undefined) data.settings.prePregWeight = null;
@@ -1063,6 +1110,7 @@ function renderAll() {
   renderWeight();
   renderSettings();
   updateDateUI();
+  renderReminderBanner();
   if (currentPage === 1) renderCharts();
 }
 
@@ -1933,6 +1981,7 @@ function renderSettings() {
   list.innerHTML = appData.settings.supplements.map((s, i) =>
     '<div class="sup-mgmt-item"><span style="font-size:22px;">' + (s.emoji || '💊') + '</span><span class="name">' + escHtml(s.name) + '</span><button class="sup-mgmt-del" onclick="removeSupplement(' + i + ')">×</button></div>'
   ).join('');
+  renderReminderList();
 }
 
 function saveCloudConfig() {
@@ -2104,7 +2153,7 @@ async function handleAuth() {
           saveUsers(u2);
           setSession(username);
           closeLogin();
-          if (!appData.settings.lmpDate) showOnboarding(); else renderAll();
+          if (!appData.settings.lmpDate) showOnboarding(); else { renderAll(); startReminderCheck(); }
           showToast('✅ 已从云端同步');
           return;
         } else {
@@ -2117,7 +2166,7 @@ async function handleAuth() {
           saveUsers(u2);
           setSession(username);
           closeLogin();
-          if (!appData.settings.lmpDate) showOnboarding(); else renderAll();
+          if (!appData.settings.lmpDate) showOnboarding(); else { renderAll(); startReminderCheck(); }
           showToast('✅ 本地数据已上传云端');
           return;
         }
@@ -2143,6 +2192,7 @@ async function handleAuth() {
       showOnboarding();
     } else {
       renderAll();
+      startReminderCheck();
     }
     showToast('✅ 欢迎回来，' + username);
   }
@@ -2400,6 +2450,7 @@ function saveOnboarding() {
   saveData();
   closeOnboarding();
   renderAll();
+  startReminderCheck();
   showToast('✅ 基本信息已保存');
 }
 
@@ -2459,6 +2510,7 @@ function initApp() {
   }
 
   renderAll();
+  startReminderCheck();
 }
 initApp();
 
@@ -2469,6 +2521,224 @@ document.getElementById('loginPass').addEventListener('keydown', (e) => {
 document.getElementById('loginUser').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('loginPass').focus();
 });
+
+// ============ REMINDERS ============
+let reminderNotified = {}; // in-memory: { 'reminderId_date': true }
+let reminderInterval = null;
+
+function getReminders() {
+  if (!appData.settings.reminders) appData.settings.reminders = [];
+  return appData.settings.reminders;
+}
+
+function renderReminderList() {
+  var list = document.getElementById('reminderList');
+  if (!list) return;
+  var reminders = getReminders();
+  if (!reminders.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text-lighter);padding:8px 0;">暂无提醒，在下方添加</div>';
+  } else {
+    list.innerHTML = reminders.map(function(r) {
+      var sup = appData.settings.supplements.find(function(s) { return s.id === r.supId; });
+      var emoji = (sup && sup.emoji) || r.emoji || '\u{1F48A}';
+      var name = (sup && sup.name) || r.name || '补剂';
+      return '<div class="reminder-item">' +
+        '<span class="ri-emoji">' + emoji + '</span>' +
+        '<div class="ri-info"><div class="ri-name">' + escHtml(name) + '</div>' +
+        '<div class="ri-detail">\u{1F552} ' + r.time + ' \u00B7 提前 ' + r.advanceMin + ' 分钟</div></div>' +
+        '<button class="ri-toggle' + (r.enabled !== false ? ' on' : '') + '" onclick="toggleReminder(\'' + r.id + '\')" aria-label="开关"></button>' +
+        '<button class="ri-del" onclick="removeReminder(\'' + r.id + '\')">×</button>' +
+      '</div>';
+    }).join('');
+  }
+  var select = document.getElementById('reminderSupSelect');
+  if (select) {
+    select.innerHTML = '<option value="">选择补剂...</option>' +
+      appData.settings.supplements.filter(function(s) { return s.enabled !== false; }).map(function(s) {
+        return '<option value="' + s.id + '">' + (s.emoji || '\u{1F48A}') + ' ' + escHtml(s.name) + '</option>';
+      }).join('');
+  }
+  updateNotifHint();
+}
+
+function updateNotifHint() {
+  var hint = document.getElementById('notifHint');
+  if (!hint) return;
+  if (!('Notification' in window)) {
+    hint.innerHTML = '当前浏览器不支持通知，仅页内提醒';
+    return;
+  }
+  var perm = Notification.permission;
+  if (perm === 'granted') {
+    hint.innerHTML = '\u2705 通知已开启，App 打开时到点自动提醒';
+  } else if (perm === 'denied') {
+    hint.innerHTML = '\u26A0\uFE0F 通知被拒绝，请到「设置 \u2192 Safari \u2192 通知」中允许本网站';
+  } else {
+    hint.innerHTML = '\u{1F514} <a href="#" onclick="requestNotifPermission();return false;">点击开启通知权限</a>，App 打开时到点自动弹通知';
+  }
+}
+
+function requestNotifPermission() {
+  if (!('Notification' in window)) { showToast('当前浏览器不支持通知'); return; }
+  Notification.requestPermission().then(function(perm) {
+    updateNotifHint();
+    if (perm === 'granted') {
+      try { new Notification('孕期记录', { body: '通知已开启，将按时提醒你吃补剂' }); } catch(e) {}
+      showToast('\u2705 通知已开启');
+    } else {
+      showToast('通知权限未开启，仅页内提醒');
+    }
+  });
+}
+
+function addReminder() {
+  var supId = document.getElementById('reminderSupSelect').value;
+  var time = document.getElementById('reminderTime').value;
+  var advanceMin = parseInt(document.getElementById('reminderAdvance').value) || 5;
+  if (!supId) { showToast('请选择补剂'); return; }
+  if (!time) { showToast('请设置提醒时间'); return; }
+  var sup = appData.settings.supplements.find(function(s) { return s.id === supId; });
+  var reminder = {
+    id: 'r_' + Date.now(),
+    supId: supId,
+    name: sup ? sup.name : '补剂',
+    emoji: sup ? sup.emoji : '\u{1F48A}',
+    time: time,
+    advanceMin: advanceMin,
+    enabled: true
+  };
+  getReminders().push(reminder);
+  saveData();
+  renderReminderList();
+  showToast('\u2705 已添加提醒');
+  if ('Notification' in window && Notification.permission === 'default') {
+    requestNotifPermission();
+  }
+}
+
+function removeReminder(id) {
+  if (!confirm('确定删除这条提醒吗？')) return;
+  var reminders = getReminders();
+  var idx = reminders.findIndex(function(r) { return r.id === id; });
+  if (idx >= 0) {
+    reminders.splice(idx, 1);
+    saveData();
+    renderReminderList();
+    showToast('已删除');
+  }
+}
+
+function toggleReminder(id) {
+  var r = getReminders().find(function(r) { return r.id === id; });
+  if (r) {
+    r.enabled = r.enabled === false ? true : false;
+    saveData();
+    renderReminderList();
+  }
+}
+
+function timeToMin(t) {
+  var parts = t.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+function checkReminders() {
+  var now = new Date();
+  var todayStr = getTodayStr();
+  var nowMin = now.getHours() * 60 + now.getMinutes();
+  var record = getRecord(todayStr);
+  var reminders = getReminders().filter(function(r) { return r.enabled !== false; });
+
+  for (var i = 0; i < reminders.length; i++) {
+    var r = reminders[i];
+    var notifyKey = r.id + '_' + todayStr;
+    var reminderMin = timeToMin(r.time);
+    var notifyAt = reminderMin - r.advanceMin;
+    var supTaken = !!record.supplements[r.supId];
+
+    if (supTaken) continue;
+
+    if (nowMin >= notifyAt && nowMin < reminderMin + 60) {
+      if (!reminderNotified[notifyKey]) {
+        reminderNotified[notifyKey] = true;
+        fireReminder(r);
+      }
+    }
+  }
+  renderReminderBanner();
+}
+
+function fireReminder(r) {
+  var sup = appData.settings.supplements.find(function(s) { return s.id === r.supId; });
+  var emoji = (sup && sup.emoji) || r.emoji || '\u{1F48A}';
+  var name = (sup && sup.name) || r.name || '补剂';
+  var msg = '该吃 ' + name + ' 了！';
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('\u{1F48A} 补剂提醒', { body: msg, tag: 'reminder_' + r.id }); } catch(e) {}
+  }
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  showToast('\u23F0 ' + msg);
+}
+
+function renderReminderBanner() {
+  var banner = document.getElementById('reminderBanner');
+  if (!banner) return;
+  var todayStr = getTodayStr();
+  var now = new Date();
+  var nowMin = now.getHours() * 60 + now.getMinutes();
+  var record = getRecord(todayStr);
+  var reminders = getReminders().filter(function(r) { return r.enabled !== false; });
+
+  var overdue = reminders.filter(function(r) {
+    var reminderMin = timeToMin(r.time);
+    var supTaken = !!record.supplements[r.supId];
+    return !supTaken && nowMin >= reminderMin;
+  });
+
+  if (overdue.length === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display = 'block';
+  banner.innerHTML = overdue.map(function(r) {
+    var sup = appData.settings.supplements.find(function(s) { return s.id === r.supId; });
+    var emoji = (sup && sup.emoji) || r.emoji || '\u{1F48A}';
+    var name = (sup && sup.name) || r.name || '补剂';
+    var lateMin = nowMin - timeToMin(r.time);
+    var lateText = lateMin < 60 ? lateMin + ' 分钟' : Math.floor(lateMin / 60) + ' 小时' + (lateMin % 60 > 0 ? (lateMin % 60) + ' 分' : '');
+    return '<div class="reminder-banner">' +
+      '<span class="rb-icon">' + emoji + '</span>' +
+      '<div class="rb-body"><div class="rb-title">' + escHtml(name) + ' 还没吃</div>' +
+      '<div class="rb-sub">应服 ' + r.time + ' \u00B7 已过 ' + lateText + '</div></div>' +
+      '<button class="rb-btn" type="button" onclick="quickTakeFromReminder(\'' + r.supId + '\')">已服用</button>' +
+    '</div>';
+  }).join('');
+}
+
+function quickTakeFromReminder(supId) {
+  var todayStr = getTodayStr();
+  var record = getRecord(todayStr);
+  if (!record.supplements[supId]) {
+    record.supplements[supId] = getNowTime();
+    saveData();
+    renderSupplements();
+    renderReminderBanner();
+    showToast('\u2705 已记录服用');
+  } else {
+    showToast('已记录过了');
+    renderReminderBanner();
+  }
+}
+
+function startReminderCheck() {
+  if (reminderInterval) clearInterval(reminderInterval);
+  reminderNotified = {};
+  checkReminders();
+  reminderInterval = setInterval(checkReminders, 30000);
+}
+
 </script>
 </body>
 </html>
