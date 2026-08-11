@@ -36,6 +36,7 @@
   --radius-sm: 12px;
   --safe-bottom: env(safe-area-inset-bottom, 16px);
   --tab-h: 64px;
+  --welcome-h: 40px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -47,7 +48,7 @@ body {
   color: var(--text);
   min-height: 100vh;
   min-height: 100dvh;
-  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px);
+  padding-bottom: calc(var(--tab-h) + var(--welcome-h) + var(--safe-bottom) + 8px);
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   user-select: none;
@@ -612,6 +613,9 @@ body {
   </div>
 </div>
 
+<!-- ============ WELCOME BAR ============ -->
+<div class="welcome-bar" id="welcomeBar"></div>
+
 <!-- ============ TAB BAR ============ -->
 <div class="tab-bar" id="tabBar">
   <div class="tab-indicator" id="tabIndicator" style="width:50%; left:0;"></div>
@@ -1100,6 +1104,7 @@ function escHtml(str) {
 
 // ============ RENDER ALL ============
 function renderAll() {
+  renderWelcome();
   renderPregBadge();
   renderSupplements();
   renderWater();
@@ -2518,6 +2523,16 @@ document.getElementById('loginPass').addEventListener('keydown', (e) => {
 document.getElementById('loginUser').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('loginPass').focus();
 });
+
+// ============ WELCOME BAR ============
+function renderWelcome() {
+  var el = document.getElementById('welcomeBar');
+  if (!el) return;
+  var u = getSession();
+  if (!u) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '<span class="wb-icon">\u{1F464}</span>欢迎，<b>' + escHtml(u) + '</b>';
+}
 
 // ============ REMINDERS ============
 let reminderNotified = {}; // in-memory: { 'reminderId_date': true }
