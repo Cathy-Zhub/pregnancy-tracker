@@ -787,14 +787,15 @@ window.addEventListener('unhandledrejection', function(e){
     box.textContent = '异步出错（把这段发给我）：\n' + (e && e.reason ? (e.reason.stack || e.reason) : e);
   } catch (_) {}
 });
-// Register service worker for offline use (PWA). Skipped on file:// or unsupported browsers.
+// Service Worker intentionally DISABLED: in standalone PWA mode it served a stale cached
+// page and caused persistent blank screens. We now unregister any previously registered
+// worker so the app always loads fresh from the origin (Cloudflare) instead of a dead cache.
 (function(){
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
-  window.addEventListener('load', function(){
-    // Use a relative URL so registration works regardless of trailing slash in the PWA launch URL.
-    navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('SW register failed', e); });
-  });
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
+  }).catch(function(e){ console.warn('SW unregister failed', e); });
 })();
 </script>
 
