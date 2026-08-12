@@ -2615,6 +2615,11 @@ function initApp() {
   startReminderCheck();
   showSplash(username); // welcome splash on (re)open
 }
+
+// Reminder state must be initialized before initApp() runs
+let reminderNotified = {}; // in-memory: { 'reminderId_date': true }
+let reminderInterval = null;
+
 initApp();
 
 // Enter key on login form
@@ -2647,9 +2652,6 @@ document.addEventListener('visibilitychange', function () {
 });
 
 // ============ REMINDERS ============
-let reminderNotified = {}; // in-memory: { 'reminderId_date': true }
-let reminderInterval = null;
-
 function getReminders() {
   if (!appData.settings.reminders) appData.settings.reminders = [];
   return appData.settings.reminders;
