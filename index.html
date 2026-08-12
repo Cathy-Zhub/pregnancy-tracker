@@ -738,6 +738,33 @@ body {
 
 </script>
 <script>
+// ---- 全局错误显示：出错时显示红字而不是白屏，方便定位问题 ----
+window.addEventListener('error', function(e){
+  try {
+    var msg = (e && e.message) ? e.message : '未知错误';
+    var where = (e && e.filename ? e.filename : '') + (e && e.lineno ? (':' + e.lineno) : '');
+    var box = document.getElementById('fatalErrorBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'fatalErrorBox';
+      box.style.cssText = 'position:fixed;left:0;top:0;right:0;max-height:60%;overflow:auto;padding:14px 16px;background:#fff;color:#c0392b;font-size:13px;line-height:1.5;z-index:99999;white-space:pre-wrap;border-bottom:2px solid #c0392b;';
+      (document.body || document.documentElement).appendChild(box);
+    }
+    box.textContent = '页面出错（把这段发给我）：\n' + msg + '\n' + where;
+  } catch (_) {}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try {
+    var box = document.getElementById('fatalErrorBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'fatalErrorBox';
+      box.style.cssText = 'position:fixed;left:0;top:0;right:0;max-height:60%;overflow:auto;padding:14px 16px;background:#fff;color:#c0392b;font-size:13px;line-height:1.5;z-index:99999;white-space:pre-wrap;border-bottom:2px solid #c0392b;';
+      (document.body || document.documentElement).appendChild(box);
+    }
+    box.textContent = '异步出错（把这段发给我）：\n' + (e && e.reason ? (e.reason.stack || e.reason) : e);
+  } catch (_) {}
+});
 // Register service worker for offline use (PWA). Skipped on file:// or unsupported browsers.
 (function(){
   if (!('serviceWorker' in navigator)) return;
