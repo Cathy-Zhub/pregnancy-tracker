@@ -1,7 +1,8 @@
 // Service worker for 孕期记录 PWA — enables offline / blocked-network opening.
-// Strategy: network-first with cache fallback, so the app shell is cached after the
-// first successful online load and can be served offline afterwards.
-const CACHE = 'pt-cache-v1';
+// Strategy: network-first for everything. Only successful same-origin 200 (basic) responses
+// are cached. Navigations always try the network first; we never serve a redirect or an
+// empty response, so a broken cached entry can never white-screen the standalone PWA.
+const CACHE = 'pt-cache-v2';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
@@ -21,28 +22,28 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
-  // Only handle same-origin requests (the app shell). Cross-origin (e.g. CDN) is not cached.
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return; // never touch cross-origin
 
   e.respondWith((async function () {
-    var cache = await caches.open(CACHE);
+    // Try the network first.
     try {
       var net = await fetch(req);
-      if (net && net.status === 200) {
-        cache.put(req, net.clone());
+      // Only cache real successful same-origin responses (not redirects / opaque).
+      if (net && net.status === 200 && net.type === 'basic') {
+        (await caches.open(CACHE)).put(req, net.clone()).catch(function () {});
       }
       return net;
     } catch (err) {
-      var cached = await cache.match(req);
+      // Network failed — fall back to any cached copy of this exact request.
+      var cached = await caches.match(req, { ignoreSearch: true });
       if (cached) return cached;
-      // For navigation requests, fall back to the cached entry of the current directory index.
+      // Last-ditch: any cached navigation HTML.
       if (req.mode === 'navigate') {
-        var fallback = await cache.match('./index.html') ||
-                      await cache.match(self.location.pathname) ||
-                      await cache.match('./');
-        if (fallback) return fallback;
+        var alt = await caches.match('/index.html', { ignoreSearch: true }) ||
+                  await caches.match('./', { ignoreSearch: true });
+        if (alt) return alt;
       }
-      throw err;
+      throw err; // genuinely offline with no cache — let the browser show its own error
     }
   })());
 });
