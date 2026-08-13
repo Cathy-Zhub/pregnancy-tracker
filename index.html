@@ -722,6 +722,8 @@ body {
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <div class="modal-overlay" id="backupModal" style="display:none;" onclick="closeBackupModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <h3 id="backupTitle">备份数据</h3>
@@ -1311,10 +1313,11 @@ function switchPage(n) {
 let toastTimer;
 function showToast(msg) {
   const el = document.getElementById('toast');
+  if (!el) { console.warn('toast element missing:', msg); return; }
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  toastTimer = setTimeout(() => { if (el) el.classList.remove('show'); }, 1800);
 }
 
 function escHtml(str) {
