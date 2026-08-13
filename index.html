@@ -1478,9 +1478,26 @@ document.getElementById('bowelModalSave').addEventListener('click', () => {
   const iso = document.getElementById('bowelModalInput').value;
   if (!iso) return;
   const newDt = iso.replace('T', ' ');
-  getRecord(editingBowelDate).bowel[editingBowelIdx] = newDt;
-  getRecord(editingBowelDate).bowel.sort();
-  saveData(); closeBowelModal(); renderBowel(); if (currentPage === 1) renderCharts();
+  const newDate = newDt.split(' ')[0];
+  if (newDate !== editingBowelDate) {
+    // 跨日期：把该条从原日期 record 移到新日期 record，
+    // 否则会出现「今天计数里夹着昨天/其他日期的记录」这种错位。
+    const oldRec = getRecord(editingBowelDate);
+    oldRec.bowel.splice(editingBowelIdx, 1);
+    if (oldRec.bowel.length === 0 && Object.keys(oldRec.supplements).length === 0 && oldRec.water === null && oldRec.weight === null) {
+      delete appData.records[editingBowelDate];
+    }
+    const newRec = getRecord(newDate);
+    if (!newRec.bowel) newRec.bowel = [];
+    newRec.bowel.push(newDt);
+    newRec.bowel.sort();
+    currentDate = newDate; // 界面按时间跳到该记录实际所属日期
+  } else {
+    const rec = getRecord(editingBowelDate);
+    rec.bowel[editingBowelIdx] = newDt;
+    rec.bowel.sort();
+  }
+  saveData(); closeBowelModal(); renderAll();
   showToast('✅ 排便时间已更新');
 });
 
