@@ -396,9 +396,12 @@ body {
 .guest-bar-btn { padding: 5px 12px; border: none; border-radius: 14px; background: #FF9800; color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
 .guest-bar-btn:active { background: #F57C00; }
 .guest-bar-btn.danger { background: none; color: #E88D7D; border: 1px solid #F0C8C2; }
+/* JS 未就绪前禁止点击，防止用户过早交互导致 "function not defined" 类报错 */
+.js-loading { pointer-events: none; }
+.js-loading .toast, .js-loading #fatalErrorBox { pointer-events: auto; }
 </style>
 </head>
-<body>
+<body class="js-loading">
 
 <!-- ============ LOGIN SCREEN ============ -->
 <div class="login-overlay" id="loginOverlay" style="display:none;">
@@ -820,6 +823,22 @@ window.addEventListener('unhandledrejection', function(e){
     }).catch(function(e){ console.warn('SW register failed', e); });
   });
 })();
+
+// 提前暴露 switchPage 的安全版本，避免主脚本块解析/执行延迟或被拦截时，
+// 用户点击底部 tab 直接报 "Can't find variable: switchPage"。
+// 等主脚本块加载完毕后，真正的 switchPage 会覆盖此占位函数。
+window.switchPage = function(n) {
+  var pr = document.getElementById('pageRecords');
+  var pc = document.getElementById('pageCharts');
+  if (pr) pr.classList.toggle('active', n === 0);
+  if (pc) pc.classList.toggle('active', n === 1);
+  var tabs = document.querySelectorAll('.tab-btn');
+  if (tabs[0]) tabs[0].classList.toggle('active', n === 0);
+  if (tabs[1]) tabs[1].classList.toggle('active', n === 1);
+  var indicator = document.getElementById('tabIndicator');
+  if (indicator) { indicator.style.left = n === 0 ? '0' : '50%'; indicator.style.width = '50%'; }
+  if (n === 1 && typeof renderCharts === 'function') renderCharts();
+};
 </script>
 
 <script>
@@ -858,7 +877,7 @@ const SESSION_KEY = 'pregnancy_tracker_session';    // current logged-in usernam
 // ============ USER MANAGEMENT ============
 // ============ CLOUD SYNC (LeanCloud) ============
 const CLOUD_KEY = 'pregnancy_tracker_cloud';   // { appId, appKey, serverURL, enabled }
-function loadCloudCfg() { try { return JSON.parse(localStorage.getItem(CLOUD_KEY)) || {}; } catch { return {}; } }
+function loadCloudCfg() { try { return JSON.parse(localStorage.getItem(CLOUD_KEY)) || {}; } catch (e) { return {}; } }
 function saveCloudCfg(cfg) { localStorage.setItem(CLOUD_KEY, JSON.stringify(cfg)); }
 function cloudInit() {
   const cfg = loadCloudCfg();
@@ -920,7 +939,7 @@ function cloudLogout() {
 
 function loadUsers() {
   try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; }
-  catch { return {}; }
+  catch (e) { return {}; }
 }
 function saveUsers(users) { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
 function getSession() { return localStorage.getItem(SESSION_KEY); }
@@ -2559,7 +2578,7 @@ function migrateOldStorage() {
     setSession('本地用户');
     localStorage.setItem(STORAGE_KEY + '_migrated', '1');
     return true;
-  } catch { return false; }
+  } catch (e) { return false; }
 }
 
 // ============ ONBOARDING ============
@@ -2655,6 +2674,7 @@ function initApp() {
   renderAll();
   startReminderCheck();
   showSplash(username); // welcome splash on (re)open
+  document.body.classList.remove('js-loading');
 }
 
 // Reminder state must be initialized before initApp() runs
@@ -2672,11 +2692,14 @@ let _bootStarted = false, _bootTries = 0;
 function boot() {
   if (_bootStarted) return;
   _bootStarted = true;
-  try { initApp(); _bootStarted = false; }
-  catch (e) { _bootStarted = false; showFatal(e); if (_bootTries++ < 5) setTimeout(boot, 1200); }
+  try { initApp(); }
+  catch (e) { showFatal(e); if (_bootTries++ < 5) setTimeout(boot, 1200); }
+  finally { _bootStarted = false; document.body.classList.remove('js-loading'); }
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
+// 兜底：无论 initApp 是否卡死，3 秒后必须恢复交互，不能让用户永远点不了
+setTimeout(function(){ document.body.classList.remove('js-loading'); }, 3000);
 window.addEventListener('pageshow', function (e) {
   if (e.persisted) {
     try {
