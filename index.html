@@ -787,15 +787,22 @@ window.addEventListener('unhandledrejection', function(e){
     box.textContent = '异步出错（把这段发给我）：\n' + (e && e.reason ? (e.reason.stack || e.reason) : e);
   } catch (_) {}
 });
-// Service Worker intentionally DISABLED: in standalone PWA mode it served a stale cached
-// page and caused persistent blank screens. We now unregister any previously registered
-// worker so the app always loads fresh from the origin (Cloudflare) instead of a dead cache.
+// Service Worker：注册后把页面缓存到本地，主屏 PWA 打开走缓存秒开，
+// 不再受 pages.dev 国内网络飘忽的影响（白屏根因）。
 (function(){
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    regs.forEach(function(r){ r.unregister(); });
-  }).catch(function(e){ console.warn('SW unregister failed', e); });
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      // 新版本就绪后跳过等待，立即接管页面
+      reg.addEventListener('updatefound', function(){
+        var nw = reg.installing;
+        if (nw) nw.addEventListener('statechange', function(){
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) nw.postMessage('skipWaiting');
+        });
+      });
+    }).catch(function(e){ console.warn('SW register failed', e); });
+  });
 })();
 </script>
 
