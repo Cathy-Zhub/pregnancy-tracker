@@ -1103,7 +1103,9 @@ function loadData() {
   const users = loadUsers();
   const user = users[username];
   if (!user || !user.data) return getDefaultData();
-  return migrateData(JSON.parse(JSON.stringify(user.data)));
+  const data = migrateData(JSON.parse(JSON.stringify(user.data)));
+  normalizeBowelRecords(data); // 修复历史脏数据：排便条目归位到正确日期
+  return data;
 }
 
 function saveData() {
@@ -1177,6 +1179,44 @@ function fmtBowelDT(str, viewingDate) {
   const { date, time } = parseBowelDT(str);
   if (date === viewingDate) return time;
   return date.slice(5) + ' ' + time;
+}
+
+// 自动按日期归一化排便记录：把「时间字符串的日期」与「所在 record 的日期」不一致的
+// 脏数据归位（历史 bug 留下的：条目物理上在 A 日数组里，时间却写着 B 日）。
+// 放在加载阶段执行，可永久修复已存在的错位数据。
+function normalizeBowelRecords(data) {
+  if (!data || !data.records) return;
+  const dates = Object.keys(data.records);
+  const moves = [];
+  for (const d of dates) {
+    const rec = data.records[d];
+    if (!rec || !Array.isArray(rec.bowel)) continue;
+    for (const dt of rec.bowel) {
+      const bd = String(dt).split(' ')[0];
+      if (bd && bd !== d) moves.push({ from: d, to: bd, dt: dt });
+    }
+  }
+  if (moves.length === 0) return;
+  for (const m of moves) {
+    const fromRec = data.records[m.from];
+    if (!fromRec || !Array.isArray(fromRec.bowel)) continue;
+    const idx = fromRec.bowel.indexOf(m.dt);
+    if (idx >= 0) fromRec.bowel.splice(idx, 1);
+    if (!data.records[m.to]) data.records[m.to] = { supplements: {}, water: null, bowel: [], weight: null };
+    const toRec = data.records[m.to];
+    if (!Array.isArray(toRec.bowel)) toRec.bowel = [];
+    if (toRec.bowel.indexOf(m.dt) < 0) toRec.bowel.push(m.dt);
+    toRec.bowel.sort();
+  }
+  // 清理被搬空、且没有任何其它数据的「源日期」记录
+  for (const m of moves) {
+    const fr = data.records[m.from];
+    if (!fr) continue;
+    const empty = (!fr.bowel || fr.bowel.length === 0)
+      && (!fr.supplements || Object.keys(fr.supplements).length === 0)
+      && fr.water === null && fr.weight === null;
+    if (empty) delete data.records[m.from];
+  }
 }
 
 // ============ PREGNANCY WEEK ============
@@ -1491,7 +1531,7 @@ document.getElementById('bowelModalSave').addEventListener('click', () => {
     if (!newRec.bowel) newRec.bowel = [];
     newRec.bowel.push(newDt);
     newRec.bowel.sort();
-    currentDate = newDate; // 界面按时间跳到该记录实际所属日期
+    // 不再自动跳到新日期：留在当前视图，让"今天归今天、昨天归昨天"一目了然
   } else {
     const rec = getRecord(editingBowelDate);
     rec.bowel[editingBowelIdx] = newDt;
