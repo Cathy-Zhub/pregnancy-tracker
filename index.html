@@ -178,6 +178,18 @@ body {
 .weight-history .change-up { color: #E88D7D; font-weight: 600; }
 .weight-history .change-down { color: var(--green-dark); font-weight: 600; }
 .weight-history .change-flat { color: var(--text-light); }
+.card-header-btn { background: var(--purple-light); color: var(--purple); border: none; border-radius: 16px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.card-header-btn:active { background: var(--purple); color: #fff; }
+.weight-history-list { max-height: 52vh; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+.wh-item { display: flex; align-items: center; gap: 10px; padding: 13px 4px; border-bottom: 1px solid var(--border); }
+.wh-item:last-child { border-bottom: none; }
+.wh-date { flex: 1; font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+.wh-val { font-size: 18px; font-weight: 700; color: var(--purple); font-variant-numeric: tabular-nums; }
+.wh-change { font-size: 12px; min-width: 58px; text-align: right; }
+.wh-change .change-up { color: #E88D7D; font-weight: 600; }
+.wh-change .change-down { color: var(--green-dark); font-weight: 600; }
+.wh-change .change-flat { color: var(--text-light); }
+.wh-empty { text-align: center; color: var(--text-light); padding: 34px 12px; font-size: 14px; line-height: 1.7; }
 
 /* ===== TAB BAR ===== */
 .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: var(--safe-bottom); max-width: 500px; margin: 0 auto; }
@@ -510,6 +522,7 @@ body {
     <div class="card">
       <div class="card-header">
         <div class="card-title"><span class="icon">⚖️</span>体重记录</div>
+        <button class="card-header-btn" onclick="openWeightHistory()">📋 往期</button>
       </div>
       <div class="weight-row">
         <div class="weight-input-wrap">
@@ -698,7 +711,16 @@ body {
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Weight History Modal -->
+<div class="modal-overlay" id="weightHistoryModal" style="display:none;" onclick="closeWeightHistoryModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3>📋 往期体重记录</h3>
+    <div class="weight-history-list" id="weightHistoryList"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="hideWeightHistoryModal()">关闭</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="backupModal" style="display:none;" onclick="closeBackupModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -1559,6 +1581,48 @@ function renderWeight() {
     }
   }
   infoRow.innerHTML = html;
+}
+
+// ---- 往期体重记录弹窗 ----
+function openWeightHistory() {
+  const listEl = document.getElementById('weightHistoryList');
+  const all = [];
+  for (const ds in appData.records) {
+    const w = getWeightVal(appData.records[ds]);
+    if (w !== null && w !== undefined && !isNaN(w)) all.push({ date: ds, weight: w });
+  }
+  all.sort((a, b) => b.date.localeCompare(a.date)); // 最近在上
+
+  if (all.length === 0) {
+    listEl.innerHTML = '<div class="wh-empty">还没有任何体重记录<br>在上方输入体重并点「记录」即可开始</div>';
+  } else {
+    const fmtCN = (ds) => { const p = ds.split('-'); return Number(p[1]) + '月' + Number(p[2]) + '日'; };
+    let html = '';
+    for (let i = 0; i < all.length; i++) {
+      const item = all[i];
+      let changeHtml = '<span class="change-flat">首条</span>';
+      if (i < all.length - 1) {
+        const diff = (item.weight - all[i + 1].weight).toFixed(2);
+        if (diff > 0) changeHtml = '<span class="change-up">↑ +' + diff + '</span>';
+        else if (diff < 0) changeHtml = '<span class="change-down">↓ ' + diff + '</span>';
+        else changeHtml = '<span class="change-flat">→ 持平</span>';
+      }
+      html += '<div class="wh-item">';
+      html += '<span class="wh-date">' + fmtCN(item.date) + '</span>';
+      html += '<span class="wh-val">' + Number(item.weight).toFixed(2) + ' kg</span>';
+      html += '<span class="wh-change">' + changeHtml + '</span>';
+      html += '</div>';
+    }
+    listEl.innerHTML = html;
+  }
+  document.getElementById('weightHistoryModal').style.display = 'flex';
+}
+function closeWeightHistoryModal(e) {
+  if (e && e.target !== document.getElementById('weightHistoryModal')) return;
+  document.getElementById('weightHistoryModal').style.display = 'none';
+}
+function hideWeightHistoryModal() {
+  document.getElementById('weightHistoryModal').style.display = 'none';
 }
 
 function saveWeight() {
