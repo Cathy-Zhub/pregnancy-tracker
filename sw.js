@@ -2,7 +2,7 @@
 // 作用：把页面缓存到本地，主屏 PWA 打开时优先用缓存秒开，
 // 彻底摆脱 pages.dev 在国内网络下间歇性卡顿/白屏的问题。
 // 云端同步（LeanCloud）走跨域请求，这里一律放行、不缓存、不影响。
-const CACHE = 'pt-v7';
+const CACHE = 'pt-v8';
 const TIMEOUT = 6000; // 网络超过 6 秒就直接用缓存，避免白屏等待
 
 self.addEventListener('install', (event) => {
