@@ -792,15 +792,10 @@ function describeError(err) {
   var msg = (err && err.message) ? String(err.message) : (err ? String(err) : '未知错误');
   var stack = (err && err.stack) ? String(err.stack) : '';
   // 1) 跨域脱敏错误（外部脚本加载失败，浏览器隐藏细节，统一显示 Script error）
+  // 新版已无跨域脚本；这类提示多由旧缓存或 Safari 系统面板（如分享到主屏幕）触发，
+  // 信息太少且与页面逻辑无关，直接不显示，避免惊吓用户。
   if (msg === 'Script error.' || msg === 'Script error' || msg === 'Script Error') {
-    return {
-      type: '跨域 / 外部资源',
-      text: '「Script error.」是浏览器对【跨域脚本加载失败】的统一脱敏提示。\n' +
-            '这通常不是程序逻辑错误，而是：某个外部脚本没加载成功（网络差 / 被拦截 / CDN 抽风）。\n' +
-            '→ 大概率是【网络问题】，或【还在用旧缓存版本】。\n' +
-            '建议：硬刷新（Cmd/Ctrl+Shift+R）或换无痕模式打开确认；本新版已无跨域脚本，不应再出现此提示。',
-      detail: stack
-    };
+    return null;
   }
   // 2) 网络类
   if (/Failed to fetch|NetworkError|network|timeout|超时|load failed|ERR_|blocked|net::|跨域/i.test(msg)) {
@@ -813,6 +808,7 @@ function describeError(err) {
 function showErrorBox(err) {
   try {
     var d = describeError(err);
+    if (!d) return; // 已判定为无需提示的错误（如 Script error.）
     var box = document.getElementById('fatalErrorBox');
     if (!box) {
       box = document.createElement('div');
@@ -825,7 +821,12 @@ function showErrorBox(err) {
 }
 
 window.addEventListener('error', function(e){
-  showErrorBox(e && e.error ? e.error : { message: (e && e.message) || '未知错误', stack: (e && e.filename ? (e.filename + ':' + e.lineno) : '') });
+  var msg = (e && e.message) ? String(e.message) : '';
+  if (msg === 'Script error.' || msg === 'Script error' || msg === 'Script Error') {
+    console.warn('Ignored external/cross-origin Script error.', e.filename, e.lineno);
+    return;
+  }
+  showErrorBox(e && e.error ? e.error : { message: msg || '未知错误', stack: (e && e.filename ? (e.filename + ':' + e.lineno) : '') });
 });
 window.addEventListener('unhandledrejection', function(e){
   showErrorBox(e && e.reason ? e.reason : { message: '未处理的异步错误 (Promise)' });
